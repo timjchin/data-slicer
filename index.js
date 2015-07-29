@@ -24,8 +24,9 @@ fileToData(commander.file, function (data) {
 
   var totals = agg.totals()
     .uniqueBy('can_nam')
-    .uniqueBy('exp_dat')
     .uniqueBy('sup_opp')
+    .uniqueBy('spe_nam')
+    .uniqueBy('pur')
     .total('exp_amo')
     .min('exp_amo')
     .max('exp_amo')

@@ -1,4 +1,3 @@
-var numberWithCommas = require('../utils/number-with-commas');
 module.exports = {
   key: 'total',
   data: function () {
@@ -8,10 +7,4 @@ module.exports = {
     data += d;
     return data;
   },
-  postProcess: function (data) {
-    return {
-      value: data,
-      prettyPrint: numberWithCommas(data)
-    }
-  }
 }
