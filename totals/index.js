@@ -15,9 +15,7 @@ var benchmark = require('../benchmark/index');
  *   };
  */
 function Totals(opts) {
-  this._outDataFormat = Totals.buildAggregationLevel();
-
-  this._currentNestedLevel = this._outDataFormat;
+  this.reset();
 
   for (var key in Totals.functions) { 
     this[key] = function (key, field) {
@@ -48,6 +46,10 @@ Totals.functions = {
 
 
 Totals.prototype = {
+  reset: function () {
+    this._outDataFormat = Totals.buildAggregationLevel();
+    this._currentNestedLevel = this._outDataFormat;
+  },
   /**
    *  @method _setData
    *  @private
@@ -163,6 +165,8 @@ Totals.prototype = {
     benchmark.start('sort');
     this._sortData(toSort);
     benchmark.stop('sort');
+
+    this.reset();
 
     return outData;
   },

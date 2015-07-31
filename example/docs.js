@@ -36,6 +36,8 @@ var firstOutput = ds.totals()
 
 console.log(JSON.stringify(firstOutput, null, 2));
 
+console.log('------------');
+
 var nestedOutput = 
   ds.totals()
     .uniqueBy('type')
@@ -48,3 +50,16 @@ var nestedOutput =
     .process();
 
 console.log(JSON.stringify(nestedOutput, null, 2));
+
+console.log('------------');
+
+
+var sortedOutput = 
+  ds.totals()
+    .uniqueBy('type')
+    .total('a')
+    .sortBy('total')
+    .process();
+
+console.log(JSON.stringify(sortedOutput, null, 2));
+
