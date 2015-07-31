@@ -1,3 +1,4 @@
+var benchmark = require('../benchmark/index');
 /**   
  *
  * Internal Data aggregation nested data structure
@@ -9,7 +10,8 @@
  *       }
  *     ],
  *     field: undefined || field to nest by
- *     nested: undefined || dataAggregation
+ *     nested: undefined || dataAggregation,
+ *     sortBy: 'total'
  *   };
  */
 function Totals(opts) {
@@ -70,6 +72,14 @@ Totals.prototype = {
     return this;
   },
 
+  sortBy: function (aggType, key) {
+    if (this._currentNestedLevel.sortBy) { 
+      throw new TypeError('For each nested uniqueBy, there can only be one level of sorting.');
+    }
+    this._currentNestedLevel.sortBy = aggType;
+    return this;
+  },
+
   /**
    *  Data is looped through once, and for each record, we loop through the
    *  dataAggregation structure. Based on the state of the data going out, we can
@@ -83,7 +93,9 @@ Totals.prototype = {
   process: function () {
     var outData = {};
     var toPostProcess = [];
+    var toSort = [];
 
+    benchmark.start('aggregation');
     for (var i = 0; i < this.data.length; i++) {
 
       var record = this.data[i];
@@ -98,12 +110,24 @@ Totals.prototype = {
 
           if (!currentOutData[field]) {
             currentOutData[field] = {};
+
+            if (currentNested.sortBy) {
+              toSort.push({
+                obj: currentOutData,
+                field: field,
+                sortBy: currentNested.sortBy
+              });
+            }
+
           }
 
           if (!currentOutData[field][recordFieldValue]) { 
             currentOutData[field][recordFieldValue] = {};
+
             if (currentNested.aggregations.length) {
-              currentOutData[field][recordFieldValue] = this._initDataSet(currentNested.aggregations);
+              currentOutData[field][recordFieldValue] = {
+                aggs: this._initDataSet(currentNested.aggregations)
+              }
               toPostProcess.push({
                 parentDataSet: currentOutData[field],
                 fieldValue: recordFieldValue,
@@ -113,7 +137,7 @@ Totals.prototype = {
           }
 
           if (currentNested.aggregations.length) {
-            var currDataSet = currentOutData[field][recordFieldValue];
+            var currDataSet = currentOutData[field][recordFieldValue].aggs;
             this._processDataSet(currentNested.aggregations, currDataSet, record);
           }
 
@@ -123,21 +147,54 @@ Totals.prototype = {
         currentNested = currentNested.nested;
       }
     }
+    benchmark.stop('aggregation');
 
+    benchmark.start('postProcess');
+    this._postProcess(outData, toPostProcess);
+    benchmark.stop('postProcess');
+    
+    benchmark.start('sort');
+    this._sortData(toSort);
+    benchmark.stop('sort');
+
+    return outData;
+  },
+
+  _postProcess: function (outData, toPostProcess) {
     for (var i = 0; i < toPostProcess.length; i++) { 
       var postProcess = toPostProcess[i];
       var currentOutDataLayer = postProcess.parentDataSet[postProcess.fieldValue];
-      this._postProcessDataSet(postProcess.aggs, currentOutDataLayer);
-      postProcess.parentDataSet[postProcess.fieldValue] = this._generateSetData(currentOutDataLayer, postProcess.aggs);
+      this._postProcessDataSet(postProcess.aggs, currentOutDataLayer.aggs);
+      postProcess.parentDataSet[postProcess.fieldValue].aggs = this._generateSetData(currentOutDataLayer.aggs, postProcess.aggs);
     }
+  },
 
-    return outData;
+  _sortData: function (toSort) {
+    for (var i = 0; i < toSort.length; i++) { 
+      var sortData = toSort[i].obj;
+      var field = toSort[i].field;
+      var sortBy = toSort[i].sortBy;
+
+      var currentObject = sortData[field];
+      var sortArray = sortData[field] = [];
+      for (var key in currentObject) { 
+        currentObject[key].key = key;
+        sortArray.push(currentObject[key]);
+      }
+
+      sortArray.sort(function (a, b) {
+        var aVal = a.aggs[sortBy],
+            bVal = b.aggs[sortBy];
+
+        return bVal - aVal;
+      });
+
+    }
   },
 
   /**
    *  Note that each dataSet keeps it's values stored in an object with one key of value.
    *  This allows the total definiton objects to return numerical and string values.
-   *
    *  @method _initDataSet
    *  @private
    *  @param aggs {Array} 
