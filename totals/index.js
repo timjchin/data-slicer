@@ -72,6 +72,13 @@ Totals.prototype = {
     return this;
   },
 
+  customTotals: function (field, totalsDefinition) {
+    this._currentNestedLevel.aggregations.push({
+      dataObject: totalsDefinition,
+      field: field
+    });
+  },
+
   sortBy: function (aggType, key) {
     if (this._currentNestedLevel.sortBy) { 
       throw new TypeError('For each nested uniqueBy, there can only be one level of sorting.');
