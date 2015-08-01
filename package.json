@@ -6,6 +6,8 @@
   "author": "Tim Chin <timjchin@gmail.com>",
   "devDependencies": {
     "commander": "^2.8.1",
+  },
+  "dependencies": {
     "csv": "^0.4.5"
   }
 }
