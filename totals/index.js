@@ -1,4 +1,3 @@
-var benchmark = require('../benchmark/index');
 /**   
  *
  * Internal Data aggregation nested data structure
@@ -41,7 +40,8 @@ Totals.functions = {
   mean: require('./mean'),
   min: require('./min'),
   max: require('./max'),
-  total: require('./total')
+  total: require('./total'),
+  uniqueValues: require('./uniqueValues')
 };
 
 
@@ -104,7 +104,6 @@ Totals.prototype = {
     var toPostProcess = [];
     var toSort = [];
 
-    benchmark.start('aggregation');
     for (var i = 0; i < this.data.length; i++) {
 
       var record = this.data[i];
@@ -113,6 +112,7 @@ Totals.prototype = {
       var currentOutData = outData;
 
       while (currentNested) {
+        // aggregations with nested values / aggregations
         if (currentNested.field) {
           var field = currentNested.field;
           var recordFieldValue = record[field];
@@ -152,19 +152,25 @@ Totals.prototype = {
 
           currentOutData = currentOutData[field][recordFieldValue];
 
+        // aggregation required, no nesting
+        } else if (currentNested.aggregations) {
+          if (!currentOutData.aggs) {
+            currentOutData.aggs = {};
+            currentOutData.aggs = this._initDataSet(currentNested.aggregations);
+            toPostProcess.push({ 
+              parentDataSet: currentOutData,
+              aggs: currentNested.aggregations
+            });
+          } 
+          this._processDataSet(currentNested.aggregations, currentOutData.aggs, record);
+
         }
         currentNested = currentNested.nested;
       }
     }
-    benchmark.stop('aggregation');
-
-    benchmark.start('postProcess');
     this._postProcess(outData, toPostProcess);
-    benchmark.stop('postProcess');
     
-    benchmark.start('sort');
     this._sortData(toSort);
-    benchmark.stop('sort');
 
     this.reset();
 
@@ -174,9 +180,16 @@ Totals.prototype = {
   _postProcess: function (outData, toPostProcess) {
     for (var i = 0; i < toPostProcess.length; i++) { 
       var postProcess = toPostProcess[i];
-      var currentOutDataLayer = postProcess.parentDataSet[postProcess.fieldValue];
+      var currentOutDataLayer = postProcess.fieldValue ? 
+        postProcess.parentDataSet[postProcess.fieldValue] : 
+        postProcess.parentDataSet;
+
       this._postProcessDataSet(postProcess.aggs, currentOutDataLayer.aggs);
-      postProcess.parentDataSet[postProcess.fieldValue].aggs = this._generateSetData(currentOutDataLayer.aggs, postProcess.aggs);
+      if (postProcess.fieldValue) { 
+        postProcess.parentDataSet[postProcess.fieldValue].aggs = this._generateSetData(currentOutDataLayer.aggs, postProcess.aggs);
+      } else {
+        postProcess.parentDataSet.aggs = this._generateSetData(currentOutDataLayer.aggs, postProcess.aggs);
+      }
     }
   },
 
