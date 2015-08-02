@@ -1,6 +1,5 @@
 var commander = require('commander');
 var Aggregator = require('../index');
-var benchmark = require('../benchmark/index');
 var fs = require('fs');
 
 commander
@@ -10,10 +9,8 @@ commander
 
 if (!commander.file) throw new Error('File required (-f)');
 
-benchmark.start('reading file');
 var agg = Aggregator();
 Aggregator.fileToData(commander.file, function (data) {
-  benchmark.stop('reading file');
 
   agg.setData(data);
 
@@ -37,9 +34,5 @@ Aggregator.fileToData(commander.file, function (data) {
     .mean('exp_amo')
     .process();
 
-  benchmark.start('writing file');
   fs.writeFile('./test.json', JSON.stringify(totals, null, 2));
-  benchmark.stop('writing file');
-
-  benchmark.log();
 });
