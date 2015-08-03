@@ -44,6 +44,11 @@ Totals.functions = {
   uniqueValues: require('./uniqueValues')
 };
 
+Totals.SORT_TYPES = { 
+  agg: 0,
+  key: 1
+}
+
 
 Totals.prototype = {
   reset: function () {
@@ -81,11 +86,40 @@ Totals.prototype = {
     });
   },
 
-  sortBy: function (aggType, key) {
+  /**
+   *  @method sortBy
+   *  @param aggType {string} aggregation type's 'key' in it's definition object
+   *  @param options {object} - additional sort options
+   *  @param [options.descending] {bool} get sorted array in descending order
+   */
+  sortBy: function (aggType, options) {
+    options = options || {};
     if (this._currentNestedLevel.sortBy) { 
       throw new TypeError('For each nested uniqueBy, there can only be one level of sorting.');
     }
-    this._currentNestedLevel.sortBy = aggType;
+    this._currentNestedLevel.sortBy = {
+      type: Totals.SORT_TYPES.agg,
+      value: aggType,
+      descending: options.descending 
+    };
+    return this;
+  },
+
+  /**
+   * Create a sort based on the key value of an aggregation.
+   * @method sortByKey 
+   * @param options {object} - additional sort options
+   * @param [options.transformFunction] {function} - function to change the key (string) into a value more suitable for a sort. 
+   *  Though, numerical strings eg: '5' - '4' === 1 in javascript.
+   * @param [options.descending] {bool} get sorted array in descending order
+   */
+  sortByKey: function (options) {
+    options = options || {};
+    this._currentNestedLevel.sortBy = {
+      type: Totals.SORT_TYPES.key,
+      transformFunction: options.transformFunction,
+      descending: options.descending
+    };
     return this;
   },
 
@@ -163,8 +197,8 @@ Totals.prototype = {
             });
           } 
           this._processDataSet(currentNested.aggregations, currentOutData.aggs, record);
-
         }
+
         currentNested = currentNested.nested;
       }
     }
@@ -198,21 +232,41 @@ Totals.prototype = {
       var sortData = toSort[i].obj;
       var field = toSort[i].field;
       var sortBy = toSort[i].sortBy;
+      var descending = sortBy.descending || false;
 
       var currentObject = sortData[field];
       var sortArray = sortData[field] = [];
+
       for (var key in currentObject) { 
         currentObject[key].key = key;
         sortArray.push(currentObject[key]);
       }
 
-      sortArray.sort(function (a, b) {
-        var aVal = a.aggs[sortBy],
-            bVal = b.aggs[sortBy];
+      if (sortBy.type === Totals.SORT_TYPES.agg) {
+        var value = sortBy.value;
+        sortArray.sort(function (a, b) {
+          var aVal = a.aggs[value],
+              bVal = b.aggs[value];
+          
+          if (descending) {
+            return bVal > aVal;
+          } else {
+            return aVal > bVal;
+          }
+        });
+      
+      } else { // sort by key
+        sortArray.sort(function (a, b) {
+          var aVal = sortBy.transformFunction ? sortBy.transformFunction(a.key) : a.key
+              bVal = sortBy.transformFunction ? sortBy.transformFunction(b.key) : b.key
 
-        return bVal - aVal;
-      });
-
+          if (descending) {
+            return bVal > aVal;
+          } else {
+            return aVal > bVal;
+          }
+        });
+      }
     }
   },
 
