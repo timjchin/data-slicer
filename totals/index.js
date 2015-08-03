@@ -242,31 +242,36 @@ Totals.prototype = {
         sortArray.push(currentObject[key]);
       }
 
+      var arr;
+      var greaterThan = descending ? 1 : -1;
+      var lessThan = descending ? -1 : 1;
+      
+      function getSortedResult(aVal, bVal) {
+        if (bVal > aVal) { 
+          return greaterThan;
+        } else if (bVal < aVal) { 
+          return lessThan;
+        } else return 0;
+      }
+
       if (sortBy.type === Totals.SORT_TYPES.agg) {
         var value = sortBy.value;
-        sortArray.sort(function (a, b) {
+        arr = sortArray.sort(function (a, b) {
           var aVal = a.aggs[value],
               bVal = b.aggs[value];
-          
-          if (descending) {
-            return bVal > aVal;
-          } else {
-            return aVal > bVal;
-          }
+
+          return getSortedResult(aVal, bVal);
         });
       
       } else { // sort by key
-        sortArray.sort(function (a, b) {
+        arr = sortArray.sort(function (a, b) {
           var aVal = sortBy.transformFunction ? sortBy.transformFunction(a.key) : a.key
               bVal = sortBy.transformFunction ? sortBy.transformFunction(b.key) : b.key
 
-          if (descending) {
-            return bVal > aVal;
-          } else {
-            return aVal > bVal;
-          }
+          return getSortedResult(aVal, bVal);
         });
       }
+      sortData[field] = arr;
     }
   },
 

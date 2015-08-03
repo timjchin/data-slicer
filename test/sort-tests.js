@@ -82,4 +82,3 @@ test('sort by key', function (t) {
   }
 
 });
-
