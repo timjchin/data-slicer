@@ -1,6 +1,6 @@
 {
   "name": "data-slicer",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "An in memory data transformer and aggregator to give summary counts for small to medium size datasets.",
   "main": "index.js",
   "author": "Tim Chin <timjchin@gmail.com>",
