@@ -1,11 +1,10 @@
 var fs = require('fs');
 var csv = require('csv');
-var d3 = require('d3');
 
-function fileToData(path, cb) {
+function fileToData(path, cb, delimiter) {
   if (path.match('csv')) {
     var stream = fs.createReadStream(path);
-    var parser = csv.parse({ columns: true }, function (err, data) {
+    var parser = csv.parse({ columns: true, delimiter: delimiter }, function (err, data) {
       if (err) throw new Error(err);
       cb(data);
     });
