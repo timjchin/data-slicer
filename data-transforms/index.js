@@ -86,10 +86,9 @@ DataTransformer.prototype = {
             this.data.splice(i, 1);
             break;
           }
-        } else if (d[opt.field]) { 
+        } else { 
           opt.fn(d, opt.field);
         }
-
       }
     }
 

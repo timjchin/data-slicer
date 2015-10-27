@@ -133,10 +133,16 @@ Totals.prototype = {
    *
    *  @method process
    */
-  process: function () {
-    var outData = {};
-    var toPostProcess = [];
-    var toSort = [];
+  process: function (data) {
+    if (data && data !== true) { 
+      var outData = data.outData;
+      var toPostProcess = data.toPostProcess;
+      var toSort = data.toSort;
+    } else {
+      var outData = {};
+      var toPostProcess = [];
+      var toSort = [];
+    }
 
     for (var i = 0; i < this.data.length; i++) {
 
@@ -155,7 +161,7 @@ Totals.prototype = {
             continue;
           }
 
-          if (!currentOutData[field]) {
+          if (!currentOutData[field]) { // first time seeing this field
             currentOutData[field] = {};
 
             if (currentNested.sortBy) {
@@ -206,11 +212,18 @@ Totals.prototype = {
         currentNested = currentNested.nested;
       }
     }
-    this._postProcess(outData, toPostProcess);
-    
-    this._sortData(toSort);
 
-    this.reset();
+    if (data) {
+      return {
+        outData: outData,
+        toPostProcess: toPostProcess,
+        toSort: toSort
+      };
+    } else {
+      this._postProcess(outData, toPostProcess);
+      this._sortData(toSort);
+      this.reset();
+    }
 
     return outData;
   },
@@ -221,7 +234,7 @@ Totals.prototype = {
       var currentOutDataLayer = postProcess.fieldValue ? 
         postProcess.parentDataSet[postProcess.fieldValue] : 
         postProcess.parentDataSet;
-
+      
       this._postProcessDataSet(postProcess.aggs, currentOutDataLayer.aggs);
       if (postProcess.fieldValue) { 
         postProcess.parentDataSet[postProcess.fieldValue].aggs = this._generateSetData(currentOutDataLayer.aggs, postProcess.aggs);

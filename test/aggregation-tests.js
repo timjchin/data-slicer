@@ -126,6 +126,7 @@ test('max / min value', function (t) {
   var ds = DataSlicer();
   ds.setData(data);
 
+  debugger;
   var agg = ds.totals()
     .max('a')
     .min('a')
