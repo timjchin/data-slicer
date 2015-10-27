@@ -150,6 +150,10 @@ Totals.prototype = {
         if (currentNested.field) {
           var field = currentNested.field;
           var recordFieldValue = record[field];
+          if (recordFieldValue === undefined) {
+            currentNested = currentNested.nested;
+            continue;
+          }
 
           if (!currentOutData[field]) {
             currentOutData[field] = {};
