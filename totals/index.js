@@ -330,9 +330,30 @@ Totals.prototype = {
 
   _generateSetData: function (dataSet, aggs) {
     var obj = {};
+    var usedAggs = {};
+    var multipleAggs = {};
+    for (var i = 0; i < aggs.length; i++) { 
+      var key = aggs[i].dataObject.key;
+      if (usedAggs[key]) { 
+        multipleAggs[key] = true;
+      }
+      usedAggs[key] = true;
+    }
     for (var i = 0; i < dataSet.length; i++) { 
       var data = dataSet[i];
-      obj[aggs[i].dataObject.key] = dataSet[i].value;
+      var agg = aggs[i];
+      var dataKey = agg.dataObject.key;
+      var dataField = agg.field;
+
+      if (multipleAggs[dataKey]) { 
+        if (!obj[dataKey]) obj[dataKey] = [];
+        obj[dataKey].push({
+          field: dataField,
+          value: dataSet[i].value
+        });
+      } else {
+        obj[dataKey] = dataSet[i].value;
+      }
     }
     return obj;
   }

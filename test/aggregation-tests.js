@@ -126,7 +126,6 @@ test('max / min value', function (t) {
   var ds = DataSlicer();
   ds.setData(data);
 
-  debugger;
   var agg = ds.totals()
     .max('a')
     .min('a')
@@ -137,3 +136,32 @@ test('max / min value', function (t) {
   
 });
 
+test('multiple values for a single aggregation', function (t) {
+  t.plan(5);
+  var data = [{ 
+    a: 100,
+    b: 50
+  }, {
+    a: 50,
+    b: 10
+  }, { 
+    a: 10,
+    b: 10
+  }];
+
+  var ds = DataSlicer();
+  ds.setData(data);
+
+  var agg = ds.totals()
+    .total('a')
+    .total('b')
+    .process();
+
+  t.equal(agg.aggs.total instanceof Array, true, 'total is an array')
+  t.equal(agg.aggs.total[0].field, 'a', 'has the correct field value');
+  t.equal(agg.aggs.total[0].value, 160, 'has the correct total value');
+
+  t.equal(agg.aggs.total[1].field, 'b', 'has the correct field value');
+  t.equal(agg.aggs.total[1].value, 70, 'has the correct totalvalue');
+  
+});
